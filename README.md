@@ -7,9 +7,13 @@
 ``mvn clean package``
 
 ### To Run:
-NOTE: Use `-i` option to specify the input file. `-o` is optional and will output the file.
+NOTE: 
+Use `-i` option to specify the input file. This option is required. 
+Use `-o` option to specify the output file. This option is optional. 
+Final result will always be logged. 
 Logs are in the `logs/app.log` directory.
 
+Example command:
 ``java -jar target/xuelian-adobe-interview-1.0-SNAPSHOT.jar -i src/test/resources/code_challenge_leads.json -o deduplicated.out``
 
 ## General Algorithm
