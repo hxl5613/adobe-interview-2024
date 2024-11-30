@@ -1,6 +1,7 @@
 package org.example;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.example.entities.CodeChallengeLeads;
 import org.example.entities.UserInfo;
 import org.slf4j.Logger;
@@ -13,7 +14,8 @@ import java.util.*;
 
 public class DeduplicationApplication {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeduplicationApplication.class);
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+            .enable(SerializationFeature.INDENT_OUTPUT);
 
     public List<UserInfo> readFromInput(String inputFile) {
         List<UserInfo> userInfoList;

@@ -14,13 +14,15 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.assertEquals;
 
 public class DeduplicationApplicationTest {
-    private static final String INPUT_FILE_DIRECTORY = "src/test/resources/code_challenge_leads.json";
+    private static final String INPUT_FILE = "src/test/resources/code_challenge_leads.json";
+    private static final String EXPECTED_FILE = "src/test/resources/code_challenge_leads_deduplicated.json";
+
     @Test
     public void testRun() {
         DeduplicationApplication application = new DeduplicationApplication();
 
-        List<UserInfo> originalList = application.readFromInput(INPUT_FILE_DIRECTORY);
-        CodeChallengeLeads outputLeads = application.run(INPUT_FILE_DIRECTORY, null);
+        List<UserInfo> expectedOutputInfo = application.readFromInput(EXPECTED_FILE);
+        CodeChallengeLeads outputLeads = application.run(INPUT_FILE, null);
         List<UserInfo> outputList = outputLeads.getUserInfoList();
 
         Set<String> emails = outputList.stream().map(UserInfo::getEmail).collect(Collectors.toSet());
@@ -40,5 +42,6 @@ public class DeduplicationApplicationTest {
         Assert.assertEquals("bill@bar.com", outputList.get(3).getData().get("email"));
         Assert.assertEquals("2014-05-07T17:33:20+00:00", outputList.get(3).getData().get("entryDate"));
 
+        Assert.assertEquals(expectedOutputInfo, outputList);
     }
 }
