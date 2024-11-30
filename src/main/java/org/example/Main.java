@@ -7,6 +7,10 @@ import org.apache.commons.cli.*;
 public class Main {
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
+    /**
+     * Main function to run the application
+     * @param args optional arguments are -i for input file and -o for output file
+     */
     public static void main(String[] args) {
         Options options = new Options();
         Option input = new Option("i", "input", true, "input file path");

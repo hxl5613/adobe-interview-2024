@@ -12,84 +12,54 @@ import java.io.File;
 import java.io.FileWriter;
 import java.util.*;
 
+/**
+ * Main logic for deduplication
+ */
 public class DeduplicationApplication {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeduplicationApplication.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .enable(SerializationFeature.INDENT_OUTPUT);
 
-    public List<UserInfo> readFromInput(String inputFile) {
-        List<UserInfo> userInfoList;
-
-        // Read from input file and parse it to a list of UserInfo objects.
-        try {
-            CodeChallengeLeads codeChallengeLeads = OBJECT_MAPPER.readValue(new File(inputFile), CodeChallengeLeads.class);
-            LOGGER.info("Read {} successfully!", inputFile);
-            userInfoList = codeChallengeLeads.getUserInfoList();
-            LOGGER.info("Parsed {} into userInfoList!", inputFile);
-        } catch (Exception e) {
-            throw new RuntimeException("Got Error Parsing file", e);
-        }
-        return userInfoList;
-    }
-
-    public void groupByIdAndEmailSeparately(List<UserInfo> userInfoList, Map<String, List<Integer>> idMap, Map<String, List<Integer>> emailMap) {
-        for (UserInfo userInfo : userInfoList) {
-            String id = userInfo.getId();
-            String email = userInfo.getEmail();
-            int index = userInfo.getIndex();
-
-            if (!idMap.containsKey(id)) {
-                List<Integer> list = new ArrayList<>();
-                idMap.put(id, list);
-            }
-            if (!emailMap.containsKey(email)) {
-                List<Integer> list = new ArrayList<>();
-                emailMap.put(email, list);
-            }
-
-            idMap.get(id).add(index);
-            emailMap.get(email).add(index);
-        }
-    }
-
-    public void unionSameKey(UnionFind uf, Map<String, List<Integer>> map) {
-        for (List<Integer> value : map.values()) {
-            int i = value.get(value.size() - 1);
-            for (int j = 0; j < value.size() - 1; j++) {
-                uf.union(i, value.get(j));
-            }
-        }
-    }
-
+    /**
+     * Min logic. It reads from inputFile, does the deduplication using Union Find algorithm, and writes to outputFile
+     * @param inputFile inputFile to read from
+     * @param outputFile outputFile to write results to
+     * @return The deduplicated CodeChallenge object
+     */
     public CodeChallengeLeads run(String inputFile, String outputFile) {
         // Prepare input
-        List<UserInfo> userInfoList = readFromInput(inputFile);
+        CodeChallengeLeads inputCodeChallengeLeads = readFromInput(inputFile);
         Map<String, List<Integer>> idMap = new HashMap<>();
         Map<String, List<Integer>> emailMap = new HashMap<>();
-        groupByIdAndEmailSeparately(userInfoList, idMap, emailMap);
+        groupByIdAndEmailSeparately(inputCodeChallengeLeads, idMap, emailMap);
         LOGGER.info("idMap: {}", idMap);
         LOGGER.info("emailMap: {}", emailMap);
 
         // Use union find to union input by the same id and by the same email, separately
-        UnionFind uf = new UnionFind(userInfoList);
+        UnionFind<UserInfo> uf = new UnionFind<>(inputCodeChallengeLeads.getLeads());
         unionSameKey(uf, idMap);
         unionSameKey(uf, emailMap);
 
-        // Display the changes from input to the output
-        List<Map<String, String>> res = new ArrayList<>();
-        for (int i = 0; i < userInfoList.size(); i++) {
+        // Log the changes from input to the output and create the result CodeChallenge
+        List<UserInfo> res = new ArrayList<>();
+        for (int i = 0; i < inputCodeChallengeLeads.getLeads().size(); i++) {
             int parentIndex = uf.find(i);
-            LOGGER.info("\nIndex {} is replaced by index {} :\n{}\n{}", i, parentIndex,
-                    userInfoList.get(i).getCriticalInfo(), userInfoList.get(parentIndex).getCriticalInfo());
             if (parentIndex == i) {
-                res.add(userInfoList.get(i).getData());
+                LOGGER.info("\nIndex {} is unchanged.", parentIndex);
+                res.add(inputCodeChallengeLeads.getLeads().get(i));
+            } else {
+                LOGGER.info("\nIndex {} is replaced by index {} :\n{}\n{}", i, parentIndex,
+                        inputCodeChallengeLeads.getLeads().get(i).getCriticalInfo(),
+                        inputCodeChallengeLeads.getLeads().get(parentIndex).getCriticalInfo()
+                );
             }
         }
 
-        CodeChallengeLeads codeChallengeLeads = new CodeChallengeLeads();
-        codeChallengeLeads.setLeads(res);
+        CodeChallengeLeads outputCodeChallengeLeads = new CodeChallengeLeads();
+        outputCodeChallengeLeads.setLeads(res);
+
         try {
-            String str = OBJECT_MAPPER.writeValueAsString(codeChallengeLeads);
+            String str = OBJECT_MAPPER.writeValueAsString(outputCodeChallengeLeads);
             LOGGER.info("Final output: {}", str);
             if (outputFile != null && !outputFile.isEmpty()) {
                 try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
@@ -99,6 +69,45 @@ public class DeduplicationApplication {
         } catch (Exception e) {
             throw new RuntimeException("Failed to serialize leads to string.", e);
         }
-        return codeChallengeLeads;
+        return outputCodeChallengeLeads;
+    }
+
+    protected CodeChallengeLeads readFromInput(String inputFile) {
+
+        // Read from input file and parse it to a CodeChallenge.
+        try {
+            CodeChallengeLeads codeChallengeLeads = OBJECT_MAPPER.readValue(new File(inputFile), CodeChallengeLeads.class);
+            LOGGER.info("Read {} successfully!", inputFile);
+            // Set indexes properly
+            for (int i = 0; i < codeChallengeLeads.getLeads().size(); i++) {
+                codeChallengeLeads.getLeads().get(i).setIndex(i);
+            }
+            LOGGER.info("Read parsed Code Challenge leads from file {}", inputFile);
+            return codeChallengeLeads;
+        } catch (Exception e) {
+            throw new RuntimeException("Got Error Parsing file", e);
+        }
+    }
+
+    private void groupByIdAndEmailSeparately(CodeChallengeLeads codeChallengeLeads, Map<String, List<Integer>> idMap, Map<String, List<Integer>> emailMap) {
+        for (UserInfo userInfo : codeChallengeLeads.getLeads()) {
+            String id = userInfo.getId();
+            String email = userInfo.getEmail();
+            int index = userInfo.getIndex();
+
+            idMap.computeIfAbsent(id, k -> new ArrayList<>()).add(index);
+            emailMap.computeIfAbsent(email, k -> new ArrayList<>()).add(index);
+        }
+    }
+
+    private void unionSameKey(UnionFind<UserInfo> uf, Map<String, List<Integer>> map) {
+        for (List<Integer> value : map.values()) {
+            int i = value.get(value.size() - 1);
+            for (int j : value) {
+                // The parent is set as the larger CodeChallengeLead
+                // (the one we want to keep after deduplication)
+                uf.union(i, j);
+            }
+        }
     }
 }

@@ -23,7 +23,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Main-Class>org.example.Main</Main-Class> <!-- Replace with your main class -->
+                            <Main-Class>org.example.Main</Main-Class>
                         </manifestEntries>
                     </archive>
                 </configuration>

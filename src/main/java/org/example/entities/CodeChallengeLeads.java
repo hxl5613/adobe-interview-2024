@@ -1,31 +1,19 @@
 package org.example.entities;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import java.util.*;
+import java.util.List;
 
 public class CodeChallengeLeads {
-    private List<Map<String, String>> leads;
+    private List<UserInfo> leads;
 
-    public List<Map<String, String>> getLeads() {
+    public CodeChallengeLeads() {
+    }
+
+    public List<UserInfo> getLeads() {
         return leads;
     }
 
-    public void setLeads(List<Map<String, String>> leads) {
+    public void setLeads(List<UserInfo> leads) {
         this.leads = leads;
     }
-
-    @JsonIgnore
-    public List<UserInfo> getUserInfoList() {
-        List<UserInfo> userInfoList = new ArrayList<>();
-        try {
-            for (int i = 0; i < leads.size(); i++) {
-                Map<String, String> data = leads.get(i);
-                userInfoList.add(i, UserInfo.createFrom(i, data));
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to parse userInfo list from leads.", e);
-        }
-        return userInfoList;
-    }
 }
+

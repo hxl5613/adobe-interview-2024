@@ -1,94 +1,94 @@
 package org.example.entities;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.annotation.*;
 
 import java.time.ZonedDateTime;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
+@JsonPropertyOrder({ "_id", "email" })
 public class UserInfo implements Comparable<UserInfo> {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static String ID_KEY = "_id";
+    private static String EMAIL_KEY = "email";
+    private static String ENTRY_DATE_KEY = "entryDate";
 
-    private final int index;
-    private final String id;
-    private final String email;
-    private final ZonedDateTime zonedDateTime;
-    private final String zonedDateTimeStr;
+    @JsonProperty(value = "_id")
+    String id;
 
-    private final Map<String, String> data;
+    String email;
 
-    private UserInfo(int index, String id, String email, ZonedDateTime zonedDateTime, String zonedDateTimeStr, Map<String, String> data) {
-        this.index = index;
-        this.id = id;
-        this.email = email;
-        this.zonedDateTime = zonedDateTime;
-        this.zonedDateTimeStr = zonedDateTimeStr;
-        this.data = data;
+    @JsonIgnore // Ignored when deserializing so we can print the original timestamp format stored in properties
+    ZonedDateTime entryDate;
+
+    Map<String, String> properties;
+
+    @JsonIgnore
+    private Integer index;
+
+    public UserInfo() {
+        properties = new HashMap<>();
     }
 
-    public static UserInfo createFrom(int index, Map<String, String> data) throws JsonProcessingException {
-        String id;
-        String email;
-        ZonedDateTime zonedDateTime;
-        String zonedDateTimeStr;
-        try {
-            id = data.get("_id");
-            email = data.get("email");
-            zonedDateTimeStr = data.get("entryDate");
-            zonedDateTime = ZonedDateTime.parse(zonedDateTimeStr);
-        } catch (Exception e) {
-            throw new RuntimeException("Could not parse _id/email/entryDate from input: " + OBJECT_MAPPER.writeValueAsString(data), e);
-        }
-        return new UserInfo(index, id, email, zonedDateTime, zonedDateTimeStr, data);
-    }
-
-    public Map<String, String> getData() {
-        return data;
-    }
-    public int getIndex() {
-        return index;
-    }
     public String getId() {
         return id;
     }
-    public String getEmail()
-    {
+
+    public String getEmail() {
         return email;
     }
-    public String getCriticalInfo() {
-        return String.format("%s, %s, %s, %s", index, id, email, zonedDateTimeStr);
+
+    public ZonedDateTime getEntryDate() {
+        return entryDate;
+    }
+
+    @JsonAnyGetter
+    public Map<String, String> getProperties() {
+        return properties;
+    }
+
+    @JsonAnySetter
+    public void add(String property, String value) {
+        if (ID_KEY.equals(property)) {
+            id = value; // Set the id field if key is _id
+        } else if (EMAIL_KEY.equals(property)) {
+            email = value; // Set the name field if key is name
+        } else if (ENTRY_DATE_KEY.equals(property)) {
+            entryDate = ZonedDateTime.parse(value); // Assuming the entry is in a string format that can be parsed as ZonedDateTime
+            properties.put(property, value);
+        } else {
+            properties.put(property, value); // Store other properties in the map
+        }
+    }
+
+    public Integer getIndex() {
+        return index;
+    }
+
+    public void setIndex(Integer index) {
+        this.index = index;
     }
 
     @Override
     public int compareTo(UserInfo other) {
-        return Comparator.comparing((UserInfo userInfo) -> userInfo.zonedDateTime.toInstant())
-                .thenComparing(userInfo -> userInfo.index)
+        return Comparator.comparing((UserInfo lead) -> lead.entryDate.toInstant())
+                .thenComparing(lead -> lead.index)
                 .compare(this, other);
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        UserInfo userInfo = (UserInfo) o;
-        return index == userInfo.index && Objects.equals(id, userInfo.id) && Objects.equals(email, userInfo.email) && Objects.equals(zonedDateTime, userInfo.zonedDateTime) && Objects.equals(zonedDateTimeStr, userInfo.zonedDateTimeStr) && Objects.equals(data, userInfo.data);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(index, id, email, zonedDateTime, zonedDateTimeStr, data);
+    @JsonIgnore
+    public String getCriticalInfo() {
+        return String.format("%s, %s, %s, %s", index, id, email, entryDate);
     }
 
     @Override
     public String toString() {
-        return "UserInfo{" +
-                "index=" + index +
-                ", id='" + id + '\'' +
+        return "CodeChallengeLead{" +
+                "id='" + id + '\'' +
                 ", email='" + email + '\'' +
-                ", zonedDateTime=" + zonedDateTime +
-                ", zonedDateTimeStr='" + zonedDateTimeStr + '\'' +
-                ", data=" + data +
+                ", entryDate=" + entryDate +
+                ", properties=" + properties +
+                ", index=" + index +
                 '}';
     }
 }
