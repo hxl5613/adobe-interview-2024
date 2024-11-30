@@ -29,6 +29,12 @@ public class DeduplicationApplication {
     public CodeChallengeLeads run(String inputFile, String outputFile) {
         // Prepare input
         CodeChallengeLeads inputCodeChallengeLeads = readFromInput(inputFile);
+
+        // We first group the records by id and by email. Then we use union find algorithm to
+        // group all the ones with the same id or the same email.
+        // NOTE: Technically, we could do this more efficiently by 1 iteration
+        //        and no need to store the list of record indexes. We do this by calling union for the email or id
+        //        as we iterate. However, this implementation was chosen because it is easier to understand.
         Map<String, List<Integer>> idMap = new HashMap<>();
         Map<String, List<Integer>> emailMap = new HashMap<>();
         groupByIdAndEmailSeparately(inputCodeChallengeLeads, idMap, emailMap);
