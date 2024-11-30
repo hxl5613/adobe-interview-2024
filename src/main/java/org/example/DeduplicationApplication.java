@@ -24,7 +24,7 @@ public class DeduplicationApplication {
      * Min logic. It reads from inputFile, does the deduplication using Union Find algorithm, and writes to outputFile
      * @param inputFile inputFile to read from
      * @param outputFile outputFile to write results to
-     * @return The deduplicated CodeChallenge object
+     * @return The deduplicated CodeChallengeLeads object
      */
     public CodeChallengeLeads run(String inputFile, String outputFile) {
         // Prepare input
@@ -46,8 +46,10 @@ public class DeduplicationApplication {
         unionSameKey(uf, idMap);
         unionSameKey(uf, emailMap);
 
-        // Log the changes from input to the output and create the result CodeChallenge
+        // Log the changes from input to the output and create the result inputCodeChallengeLeads
+        CodeChallengeLeads outputCodeChallengeLeads = new CodeChallengeLeads();
         List<UserInfo> res = new ArrayList<>();
+        outputCodeChallengeLeads.setLeads(res);
         for (int i = 0; i < inputCodeChallengeLeads.getLeads().size(); i++) {
             int parentIndex = uf.find(i);
             if (parentIndex == i) {
@@ -60,9 +62,6 @@ public class DeduplicationApplication {
                 );
             }
         }
-
-        CodeChallengeLeads outputCodeChallengeLeads = new CodeChallengeLeads();
-        outputCodeChallengeLeads.setLeads(res);
 
         try {
             String str = OBJECT_MAPPER.writeValueAsString(outputCodeChallengeLeads);
@@ -80,7 +79,7 @@ public class DeduplicationApplication {
 
     protected CodeChallengeLeads readFromInput(String inputFile) {
 
-        // Read from input file and parse it to a CodeChallenge.
+        // Read from input file and parse it to a CodeChallengeLeads.
         try {
             CodeChallengeLeads codeChallengeLeads = OBJECT_MAPPER.readValue(new File(inputFile), CodeChallengeLeads.class);
             LOGGER.info("Read {} successfully!", inputFile);
@@ -88,7 +87,7 @@ public class DeduplicationApplication {
             for (int i = 0; i < codeChallengeLeads.getLeads().size(); i++) {
                 codeChallengeLeads.getLeads().get(i).setIndex(i);
             }
-            LOGGER.info("Read parsed Code Challenge leads from file {}", inputFile);
+            LOGGER.info("Read parsed Code Challenge Leads from file {}", inputFile);
             return codeChallengeLeads;
         } catch (Exception e) {
             throw new RuntimeException("Got Error Parsing file", e);
@@ -110,7 +109,7 @@ public class DeduplicationApplication {
         for (List<Integer> value : map.values()) {
             int i = value.get(value.size() - 1);
             for (int j : value) {
-                // The parent is set as the larger CodeChallengeLead
+                // The parent is set as the larger UserInfo
                 // (the one we want to keep after deduplication)
                 uf.union(i, j);
             }

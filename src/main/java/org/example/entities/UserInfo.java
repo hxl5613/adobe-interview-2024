@@ -83,7 +83,7 @@ public class UserInfo implements Comparable<UserInfo> {
 
     @Override
     public String toString() {
-        return "CodeChallengeLead{" +
+        return "UserInfo{" +
                 "id='" + id + '\'' +
                 ", email='" + email + '\'' +
                 ", entryDate=" + entryDate +
